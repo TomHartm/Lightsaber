@@ -1,4 +1,5 @@
 #include "FastLED.h"
+#include "OneButton.h"
 
 
 #if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3001000)
@@ -36,6 +37,7 @@ bool light_on = false;
 
 void saber_switch();
 
+  OneButton button(buttonPin, false);
 
 
 
@@ -46,6 +48,10 @@ void setup() {
   delay(1000); // 3 second delay for recovery
 
   Serial.begin(9600);
+
+  button.attachDoubleClick(change_colour);
+  button.attachClick(saber_switch);
+
   
   // tell FastLED about the LED strip configuration
   FastLED.addLeds<LED_TYPE,LED_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -68,7 +74,9 @@ uint8_t gHue = 150; // rotating "base color" used by many of the patterns
   
 void loop()
 {
-  buttonState = digitalRead(buttonPin);
+  button.tick();
+  delay(10);
+  /*buttonState = digitalRead(buttonPin);
   Serial.print(mode);
 
   if(buttonState == HIGH)
@@ -93,23 +101,29 @@ void loop()
     if(mode == 0){green = 250;red = 0; blue = 0;}
     else if(mode == 1){green = 0;red = 0; blue = 250;}
     else if(mode == 2){green = 0;red = 250; blue = 0;}
-    if(light_on){change_colour();}
+    if(light_on){change_colour();}*/
 }
 void change_colour(){
+  mode++;
+  if(mode ==3){mode = 0;}
+  if(mode == 0){green = 250;red = 0; blue = 0;}
+    else if(mode == 1){green = 0;red = 0; blue = 250;}
+    else if(mode == 2){green = 0;red = 250; blue = 0;}
+    if(light_on){
   for (int i = 0; i<NUM_LEDS; i++)
       {
         leds[i].setRGB(red,green,blue);
         
       }
     FastLED.show();}
-
+}
 void saber_switch(){
   if(!light_on){
   
   for (int i = 0; i<NUM_LEDS; i++)
       {
         leds[i].setRGB(red,green,blue);
-        delay(15);
+        delay(10);
         FastLED.show();
       }
       light_on = true;
@@ -117,14 +131,13 @@ void saber_switch(){
     }
 
   else{
-  
-  for (int i = NUM_LEDS-1; i>=0; i--)
-      {
-        leds[i].setRGB(0,0,0);
-        delay(15);
-        FastLED.show();
-        red=0; green=0; blue=0;
-      }
+    for (int i = NUM_LEDS-1; i>=0; i--)
+        {
+          leds[i].setRGB(0,0,0);
+          delay(10);
+          FastLED.show();
+         // red=0; green=0; blue=0;
+        }
 
     
     light_on = false;
