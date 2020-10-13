@@ -2,29 +2,22 @@
 #include "WS2812FX.h"
 
 /////////////////////////////////////////INITIALISIERUNG/////////////////////////////////////////////////////////
-
-//#define LED_TYPE    WS2812
-//#define COLOR_ORDER GRB
 #define NUM_LEDS    100
-//#define switchPin 5
+
 #define LED_PIN 11
-
-//#define FRAMES_PER_SECOND  60
-
 #define buttonPin 2
 #define buttonPin2 3
+
+//#define switchPin 5
+//#define FRAMES_PER_SECOND  60
+//#define LED_TYPE    WS2812
+//#define COLOR_ORDER GRB
 
 int mode = 0;
 uint32_t colour = GREEN;
 int color_count = 0;
 bool light_on = false;
 int BRIGHTNESS = 150;   //alt: 250
-
-//Startfabe
-//byte green = 250;
-//byte red = 0;
-//byte blue = 0;
-
 bool men = false;
 
 OneButton button(buttonPin, false);
@@ -34,11 +27,9 @@ WS2812FX ws2812fx = WS2812FX(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 /////////////////////////////////////////SETUP/////////////////////////////////////////////////////////
 
-
 void setup() {
   pinMode (buttonPin, INPUT);
   pinMode (buttonPin2, INPUT);
-
 
  // delay(1000); // 1 second delay for recovery
  // Serial.begin(9600);
@@ -146,7 +137,7 @@ void change_mode(){
   //Serial.println(mode);
   if(mode == 0){static_mode();}
   else if(mode == 1){smooth(); light_on = true;}
-  else if(mode == 2){change_color();}
+  else if(mode == 2){moving_dot();}
   else if(mode == 3){breath();}
   else if(mode == 4){randomc();}}
 
@@ -175,18 +166,18 @@ void smooth(){
   ws2812fx.setMode(FX_MODE_RAINBOW_CYCLE);
   ws2812fx.start();}
   
-void change_color(){
+void moving_dot(){
   ws2812fx.setSpeed(300);
   ws2812fx.setMode(FX_MODE_LARSON_SCANNER);
   ws2812fx.start();}
 
 void breath(){
-  ws2812fx.setSpeed(300);
+  ws2812fx.setSpeed(2000);
   ws2812fx.setMode(FX_MODE_RUNNING_LIGHTS);
   ws2812fx.start();}
 
 void randomc(){
-  ws2812fx.setSpeed(18000);
+  ws2812fx.setSpeed(40000);
   ws2812fx.setMode(FX_MODE_RAINBOW);
   ws2812fx.start();}
 
