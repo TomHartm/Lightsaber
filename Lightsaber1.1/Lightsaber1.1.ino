@@ -1,18 +1,32 @@
-///SD///
-//#include "SD.h"
-//#define SD_ChipSelectPin 10
-//#include "TMRpcm.h"
-//#include "SPI.h"
 
-//Gyro///
-//#include "Wire.h"
-//const int MPU = 0x68; 
-//int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
+/*
 
-//TMRpcm tmrpcm;
 
-////ENDE SD////
+void setup() {
+    pinMode(13, OUTPUT);
 
+  Serial.begin(9600);
+
+}
+
+void loop() {
+
+
+
+    
+  }
+
+}
+*/
+////ENDE MPU////
+#include <MPU6050_tockn.h>
+#include <Wire.h>
+
+MPU6050 mpu6050(Wire);
+int k = 0;
+int j = 0;
+long timer = 0;
+long timer2 = 0.0;
 #include "OneButton.h"
 #include "WS2812FX.h"
 #include "EEPROM.h"
@@ -25,6 +39,7 @@
 #define buttonPin2 3
 #define soundPin1 5
 #define soundPin2 6
+
 //Sound
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
@@ -41,31 +56,32 @@ bool light_on = false;
 int BRIGHTNESS = 130;   //max: 255
 bool men = false;
 bool soundon = true;
-bool mukke;
 long zeit= 0.0;
+
 OneButton button(buttonPin, false);
 OneButton button2(buttonPin2, false);
 
-  SoftwareSerial mySoftwareSerial(soundPin1,soundPin2); // RX, TX
+SoftwareSerial mySoftwareSerial(soundPin1,soundPin2); // RX, TX
 DFRobotDFPlayerMini Player;
 
 WS2812FX ws2812fx = WS2812FX(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 /////////////////////////////////////////SETUP/////////////////////////////////////////////////////////
-
 void setup() {
-      pinMode (busy, INPUT);
+  pinMode (busy, INPUT);
   mySoftwareSerial.begin(9600);
+  
+  Wire.begin();
+  mpu6050.begin();
+  
   Player.begin(mySoftwareSerial);
-  Player.volume(25);
+  Player.volume(20);
   pinMode (buttonPin, INPUT);
   pinMode (buttonPin2, INPUT);
   BRIGHTNESS = EEPROM.read(0);
+  soundon = EEPROM.read(1);
  // delay(1000); // 1 second delay for recovery
- Serial.begin(9600);
-
- // tmrpcm.speakerPin=9;
- // tmrpcm.setVolume(7);
+  //Serial.begin(9600);
 
   button.attachDoubleClick(change_mode);
   button.attachClick(saber_switch);
@@ -93,10 +109,14 @@ void loop()
 { 
   button.tick();
   button2.tick();
+  mpu6050.update();
+
 
   ws2812fx.service();
-  Serial.println(digitalRead(busy));
-  if(digitalRead(busy) == 1 && soundon && light_on && (millis()-zeit > 25)){   Player.play(3); zeit = millis(); }
+  if(digitalRead(busy) == 1){
+    if(soundon && light_on && (millis()-zeit >30))
+    {Player.play(3); zeit = millis();} }
+      checkmove();
 }
 
 /////////////////////////////////////////FUNKTIONEN/////////////////////////////////////////////////////////
@@ -104,14 +124,12 @@ void menue(){
   men = !men;
   if(men){
     button.attachClick(NULL);
-    button.attachDoubleClick(NULL);
+    button.attachDoubleClick(soundswitch);
     button.attachLongPressStart(NULL);
     button.attachDuringLongPress(brightness_up_smooth);
+    
     button2.attachDuringLongPress(brightness_down_smooth);
 
-   // button.attachDoubleClick(brightness_up);
-    //button2.attachClick(brightness_down);
-    //button2.attachDoubleClick(blalbabla);
     ws2812fx.pause();
     for (int i = 0; i<NUM_LEDS; i++){ws2812fx.setPixelColor(i,BLACK);}
     ws2812fx.show();
@@ -122,18 +140,19 @@ void menue(){
     button.attachClick(saber_switch);
     button.attachDoubleClick(change_mode);
     button.attachLongPressStart(change_colour);
+    button.attachDuringLongPress(NULL);  
+
     button2.attachClick(NULL);
     button2.attachDuringLongPress(NULL);
     EEPROM.write(0, BRIGHTNESS);
+    EEPROM.write(1, soundon);
 
-    //button2.attachDoubleClick(blablabla);
     ws2812fx.resume();
-    //change_mode();
     }
 }
 
 void brightness_up_smooth(){
-  if(BRIGHTNESS<250){BRIGHTNESS +=2;}
+  if(BRIGHTNESS<250){BRIGHTNESS += 2;}
   ws2812fx.setBrightness(BRIGHTNESS);
   for(int i = 0; i < BRIGHTNESS/3; i++){ws2812fx.setPixelColor(i, ws2812fx.getColor());}
     ws2812fx.show();
@@ -141,7 +160,7 @@ void brightness_up_smooth(){
   }
 
 void brightness_down_smooth(){
-  if(BRIGHTNESS>20){BRIGHTNESS -=2;}
+  if(BRIGHTNESS>20){BRIGHTNESS -= 2;}
     ws2812fx.setBrightness(BRIGHTNESS);
 
     for (int i = BRIGHTNESS/3 -1; i<NUM_LEDS; i++){ws2812fx.setPixelColor(i, BLACK);}
@@ -149,25 +168,6 @@ void brightness_down_smooth(){
     delay(30);
   }
 
-void brightness_up(){
-    if(BRIGHTNESS<241){BRIGHTNESS +=10;}
-    ws2812fx.setBrightness(BRIGHTNESS);
-
-    //for (int i = 0; i<NUM_LEDS; i++){ws2812fx.setPixelColor(i, BLACK);}
-    //ws2812fx.show();
-    for(int i = 0; i < BRIGHTNESS/3; i++){ws2812fx.setPixelColor(i, ws2812fx.getColor());}
-    ws2812fx.show();
-    }
-
-void brightness_down(){
-    if(BRIGHTNESS>29){BRIGHTNESS -=10;}
-    ws2812fx.setBrightness(BRIGHTNESS);
-
-    for (int i = BRIGHTNESS/3 -1; i<NUM_LEDS; i++){ws2812fx.setPixelColor(i, BLACK);}
-    ws2812fx.show();
-    //for(int i = 0; i<BRIGHTNESS/2.5; i++){ws2812fx.setPixelColor(i, ws2812fx.getColor());}
-    //ws2812fx.show();
-    }
 
 void saber_switch(){
   if(!light_on){
@@ -177,9 +177,10 @@ void saber_switch(){
   for (int i = 0; i<NUM_LEDS; i++)
       {
         ws2812fx.setPixelColor(i, colour);
-        delay(7);
+        delay(14);
         ws2812fx.show();  
-      }            
+      }   
+       if(soundon){Player.play(3);}        
     }
 
   else{
@@ -241,5 +242,34 @@ void randomc(){
   ws2812fx.setMode(FX_MODE_RAINBOW);
   ws2812fx.start();}
 
+void soundswitch(){
+  Player.stop();
+  soundon = !soundon;}
 
-//void sound(){}
+void checkmove(){
+  if(millis() - timer > 40){
+
+        j = 100*(abs(mpu6050.getAccX()) + abs(mpu6050.getAccZ()) + abs(mpu6050.getAccY()));
+  //  Serial.print("\tj : ");Serial.println(j);
+//Serial.print("\tk : ");Serial.println(k);
+
+    if(j-k >15 && (millis() - timer2 >2500)){Player.play(5); timer2 = millis();}
+        k = 100*(abs(mpu6050.getAccX()) + abs(mpu6050.getAccZ()) + abs(mpu6050.getAccY()));
+    
+ //   Serial.println("=======================================================\n");
+    timer = millis();}}
+
+
+void playTrack(uint8_t track) {
+   Player.stop();
+   delay(30);
+   Player.play(track);
+   delay(200);
+   int file = Player.readCurrentFileNumber();
+
+   while (file != track) {
+     Player.play(track);
+     delay(200);
+     file = Player.readCurrentFileNumber();
+   }
+}
