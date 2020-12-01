@@ -1,28 +1,5 @@
 
-/*
 
-
-void setup() {
-    pinMode(13, OUTPUT);
-
-  Serial.begin(9600);
-
-}
-
-void loop() {
-
-
-
-    
-  }
-
-}
-*/
-////ENDE MPU////
-#include <MPU6050_tockn.h>
-#include <Wire.h>
-
-MPU6050 mpu6050(Wire);
 int k = 0;
 int j = 0;
 long timer = 0;
@@ -71,17 +48,15 @@ void setup() {
   pinMode (busy, INPUT);
   mySoftwareSerial.begin(9600);
   
-  Wire.begin();
-  mpu6050.begin();
   
   Player.begin(mySoftwareSerial);
-  Player.volume(20);
+  Player.volume(15);
   pinMode (buttonPin, INPUT);
   pinMode (buttonPin2, INPUT);
   BRIGHTNESS = EEPROM.read(0);
   soundon = EEPROM.read(1);
  // delay(1000); // 1 second delay for recovery
-  //Serial.begin(9600);
+  Serial.begin(9600);
 
   button.attachDoubleClick(change_mode);
   button.attachClick(saber_switch);
@@ -109,18 +84,17 @@ void loop()
 { 
   button.tick();
   button2.tick();
-  mpu6050.update();
-
 
   ws2812fx.service();
   if(digitalRead(busy) == 1){
     if(soundon && light_on && (millis()-zeit >30))
-    {Player.play(3); zeit = millis();} }
-      checkmove();
+    {
+      Player.play(3); zeit = millis();} }
 }
 
 /////////////////////////////////////////FUNKTIONEN/////////////////////////////////////////////////////////
 void menue(){
+print2();
   men = !men;
   if(men){
     button.attachClick(NULL);
@@ -170,6 +144,7 @@ void brightness_down_smooth(){
 
 
 void saber_switch(){
+  print1();
   if(!light_on){
     light_on = true;
     if(soundon){Player.play(1);}
@@ -246,30 +221,5 @@ void soundswitch(){
   Player.stop();
   soundon = !soundon;}
 
-void checkmove(){
-  if(millis() - timer > 40){
-
-        j = 100*(abs(mpu6050.getAccX()) + abs(mpu6050.getAccZ()) + abs(mpu6050.getAccY()));
-  //  Serial.print("\tj : ");Serial.println(j);
-//Serial.print("\tk : ");Serial.println(k);
-
-    if(j-k >15 && (millis() - timer2 >2500)){Player.play(5); timer2 = millis();}
-        k = 100*(abs(mpu6050.getAccX()) + abs(mpu6050.getAccZ()) + abs(mpu6050.getAccY()));
-    
- //   Serial.println("=======================================================\n");
-    timer = millis();}}
-
-
-void playTrack(uint8_t track) {
-   Player.stop();
-   delay(30);
-   Player.play(track);
-   delay(200);
-   int file = Player.readCurrentFileNumber();
-
-   while (file != track) {
-     Player.play(track);
-     delay(200);
-     file = Player.readCurrentFileNumber();
-   }
-}
+void print1(){Serial.println("1 gedrückt");}
+void print2(){Serial.println("2 gedrückt");}
